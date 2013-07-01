@@ -392,21 +392,11 @@ void pft_execute(pft_plan p) {
         swap_array[k] = in[k];
     }
 
-    {
-        int rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        printf("%d: INIT %d, %d\n", rank, systolic.rank, initial_right, initial_left);
-    }
     MPI_Sendrecv(
         swap_array, N_per_proc, MPI_DOUBLE_COMPLEX, initial_right, 0,
         foreign_array, N_per_proc, MPI_DOUBLE_COMPLEX, initial_left, 0,
         systolic.comm, MPI_STATUS_IGNORE
     );
-    {
-        int rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        printf("%d: --- 2 ---\n", rank);
-    }
 
 
     // Initialise output array
