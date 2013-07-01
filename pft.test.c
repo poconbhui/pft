@@ -7,6 +7,7 @@
 // Compares output of pft and fftw. If results differ by more than
 // 10^-6, it complains.
 int MPI_main(int argc, char* argv[]) {
+    double ACCEPTABLE_DIFF = 1e-5;
 
     // Array sizes
     int N = 2*2*2*2;
@@ -65,6 +66,13 @@ int MPI_main(int argc, char* argv[]) {
     if(nprocs/(N/N_per_proc) > (N/N_per_proc)) {
         printf(
             "Number of replicas must not exceed number of systolic elements\n"
+        );
+        return EXIT_FAILURE;
+    }
+    if((N/N_per_proc)%(nprocs/(N/N_per_proc)) != 0) {
+        printf(
+            "Number of replicas must evenly divide "
+            "number of systolic elements\n"
         );
         return EXIT_FAILURE;
     }
@@ -142,7 +150,9 @@ int MPI_main(int argc, char* argv[]) {
         // Compare arrays
         for(i=0; i<N; ++i) {
             double diff = cabs(local[i] - fftw_initial_array[i]);
-            if(diff > 1E-6) printf("INITIAL DIFFERENCE: %e\n", creal(diff));
+            if(diff > ACCEPTABLE_DIFF) {
+                printf("INITIAL DIFFERENCE: %e\n", creal(diff));
+            }
         }
     }
     pft_gather(pft_forward_array, local, N, N_per_proc, 0, comm);
@@ -157,7 +167,9 @@ int MPI_main(int argc, char* argv[]) {
         // Compare arrays
         for(i=0; i<N; ++i) {
             double diff = cabs(local[i] - fftw_forward_array[i]);
-            if(diff > 1E-6) printf("FORWARD DIFFERENCE: %e\n", creal(diff));
+            if(diff > ACCEPTABLE_DIFF) {
+                printf("FORWARD DIFFERENCE: %e\n", creal(diff));
+            }
         }
     }
     pft_gather(pft_backward_array, local, N, N_per_proc, 0, comm);
@@ -172,7 +184,9 @@ int MPI_main(int argc, char* argv[]) {
         // Compare arrays
         for(i=0; i<N; ++i) {
             double diff = cabs(local[i] - fftw_backward_array[i]);
-            if(diff > 1E-6) printf("BACKWARD DIFFERENCE: %e\n", creal(diff));
+            if(diff > ACCEPTABLE_DIFF) {
+                printf("BACKWARD DIFFERENCE: %e\n", creal(diff));
+            }
         }
     }
 

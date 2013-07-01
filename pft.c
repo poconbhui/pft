@@ -232,7 +232,8 @@ typedef struct {
     int local_chunk_start;
 
     int initial_foreign_rank;
-    int initial_swap_rank;
+    int initial_right;
+    int initial_left;
 } pft_plan_type;
 
 
@@ -277,15 +278,18 @@ pft_plan pft_plan_dft_1d(
     );
 
 
-    // Find initial foreign rank
-    int initial_foreign_rank = (
+    // Find initial swap rank from initial foreign rank
+    int initial_left = (
         systolic.rank
-        + replica_num*systolic.nprocs/num_replicas
-
+        + (replica_num*systolic.nprocs)/num_replicas
+    ) % systolic.nprocs;
+    int initial_right = (
+        systolic.rank 
+        - (replica_num*systolic.nprocs)/num_replicas + systolic.nprocs
     ) % systolic.nprocs;
 
-    // Find initial swap rank from initial foreign rank
-    int initial_swap_rank = initial_foreign_rank;
+    // Find initial foreign rank
+    int initial_foreign_rank = initial_left;
 
 
 
@@ -309,7 +313,8 @@ pft_plan pft_plan_dft_1d(
     p->local_chunk_start = local_chunk_start;
     p->equiv_comm = equiv_comm;
     p->initial_foreign_rank = initial_foreign_rank;
-    p->initial_swap_rank = initial_swap_rank;
+    p->initial_right = initial_right;
+    p->initial_left = initial_left;
 
 
     return p;
@@ -359,7 +364,8 @@ void pft_execute(pft_plan p) {
     int local_chunk_start = plan->local_chunk_start;
 
     int initial_foreign_rank = plan->initial_foreign_rank;
-    int initial_swap_rank = plan->initial_swap_rank;
+    int initial_right = plan->initial_right;
+    int initial_left = plan->initial_left;
 
 
 
@@ -386,11 +392,21 @@ void pft_execute(pft_plan p) {
         swap_array[k] = in[k];
     }
 
+    {
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        printf("%d: INIT %d, %d\n", rank, systolic.rank, initial_right, initial_left);
+    }
     MPI_Sendrecv(
-        swap_array, N_per_proc, MPI_DOUBLE_COMPLEX, initial_swap_rank, 0,
-        foreign_array, N_per_proc, MPI_DOUBLE_COMPLEX, initial_swap_rank, 0,
+        swap_array, N_per_proc, MPI_DOUBLE_COMPLEX, initial_right, 0,
+        foreign_array, N_per_proc, MPI_DOUBLE_COMPLEX, initial_left, 0,
         systolic.comm, MPI_STATUS_IGNORE
     );
+    {
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        printf("%d: --- 2 ---\n", rank);
+    }
 
 
     // Initialise output array
