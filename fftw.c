@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     fftw_execute(p_forward);
     fftw_execute(p_backward);
 
-    rescale(backward, N);
+    rescale(backward, N, 1.0/N);
 
     // Output data
     print_arr(initial, N);
