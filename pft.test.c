@@ -39,9 +39,17 @@ int MPI_main(int argc, char* argv[]) {
     int i;
 
 
-    // Enforce assumptions
+    if(argc != 3) {
+      printf("Usage: mpiexec -n P ./pft.test N N_per_proc\n");
+      return EXIT_FAILURE;
+    }
+
+    N = atoi(argv[1]);
+    N_per_proc = atoi(argv[2]);
     MPI_Comm_size(comm, &nprocs);
 
+
+    // Enforce assumptions
     if(N%nprocs != 0) {
         printf("Number of processes must divide N evenly.\n");
         return EXIT_FAILURE;
@@ -185,6 +193,9 @@ int MPI_main(int argc, char* argv[]) {
     fftw_free(fftw_initial_array);
     fftw_free(fftw_forward_array);
     fftw_free(fftw_backward_array);
+
+
+    printf("Tests finished.\n");
 
 
     return EXIT_SUCCESS;
